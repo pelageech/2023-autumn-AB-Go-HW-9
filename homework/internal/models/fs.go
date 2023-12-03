@@ -1,6 +1,6 @@
 package models
 
 type (
-	FileName string
-	FilePath string
+	FileName = string
+	FilePath = string
 )
