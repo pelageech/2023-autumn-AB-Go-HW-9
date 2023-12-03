@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package file;
+
+option go_package = "./filepb";
+
+service FileService {
+  rpc ReadFile(stream ReadFileRequest) returns (stream ReadFileReply);
+  rpc Ls(stream LsRequest) returns (LsReply);
+  rpc Meta(stream MetaRequest) returns (MetaReply);
+}
+
+message ReadFileRequest {
+  string Name = 1;
+}
+
+message ReadFileReply {
+  bytes Stream = 1;
+}
+
+message LsRequest {
+  string Dir = 1;
+}
+
+message LsReply {
+  repeated string Files = 1;
+}
+
+message MetaRequest {
+  string Name = 1;
+}
+
+message MetaReply {
+  int64 Size = 1; // in bytes
+  uint32 Mode = 2; // rwxrwxrwx bit array, 31-9 bits not used
+  bool IsDir = 3;
+  reserved 4 to 8;
+}
