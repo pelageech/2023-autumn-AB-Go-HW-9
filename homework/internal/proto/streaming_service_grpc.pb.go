@@ -22,9 +22,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FileServiceClient interface {
-	ReadFile(ctx context.Context, opts ...grpc.CallOption) (FileService_ReadFileClient, error)
-	Ls(ctx context.Context, opts ...grpc.CallOption) (FileService_LsClient, error)
-	Meta(ctx context.Context, opts ...grpc.CallOption) (FileService_MetaClient, error)
+	ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (FileService_ReadFileClient, error)
+	Ls(ctx context.Context, in *LsRequest, opts ...grpc.CallOption) (*LsReply, error)
+	Meta(ctx context.Context, in *MetaRequest, opts ...grpc.CallOption) (*MetaReply, error)
 }
 
 type fileServiceClient struct {
@@ -35,27 +35,28 @@ func NewFileServiceClient(cc grpc.ClientConnInterface) FileServiceClient {
 	return &fileServiceClient{cc}
 }
 
-func (c *fileServiceClient) ReadFile(ctx context.Context, opts ...grpc.CallOption) (FileService_ReadFileClient, error) {
+func (c *fileServiceClient) ReadFile(ctx context.Context, in *ReadFileRequest, opts ...grpc.CallOption) (FileService_ReadFileClient, error) {
 	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[0], "/file.FileService/ReadFile", opts...)
 	if err != nil {
 		return nil, err
 	}
 	x := &fileServiceReadFileClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
 	return x, nil
 }
 
 type FileService_ReadFileClient interface {
-	Send(*ReadFileRequest) error
 	Recv() (*ReadFileReply, error)
 	grpc.ClientStream
 }
 
 type fileServiceReadFileClient struct {
 	grpc.ClientStream
-}
-
-func (x *fileServiceReadFileClient) Send(m *ReadFileRequest) error {
-	return x.ClientStream.SendMsg(m)
 }
 
 func (x *fileServiceReadFileClient) Recv() (*ReadFileReply, error) {
@@ -66,81 +67,31 @@ func (x *fileServiceReadFileClient) Recv() (*ReadFileReply, error) {
 	return m, nil
 }
 
-func (c *fileServiceClient) Ls(ctx context.Context, opts ...grpc.CallOption) (FileService_LsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[1], "/file.FileService/Ls", opts...)
+func (c *fileServiceClient) Ls(ctx context.Context, in *LsRequest, opts ...grpc.CallOption) (*LsReply, error) {
+	out := new(LsReply)
+	err := c.cc.Invoke(ctx, "/file.FileService/Ls", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &fileServiceLsClient{stream}
-	return x, nil
+	return out, nil
 }
 
-type FileService_LsClient interface {
-	Send(*LsRequest) error
-	CloseAndRecv() (*LsReply, error)
-	grpc.ClientStream
-}
-
-type fileServiceLsClient struct {
-	grpc.ClientStream
-}
-
-func (x *fileServiceLsClient) Send(m *LsRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *fileServiceLsClient) CloseAndRecv() (*LsReply, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(LsReply)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *fileServiceClient) Meta(ctx context.Context, opts ...grpc.CallOption) (FileService_MetaClient, error) {
-	stream, err := c.cc.NewStream(ctx, &FileService_ServiceDesc.Streams[2], "/file.FileService/Meta", opts...)
+func (c *fileServiceClient) Meta(ctx context.Context, in *MetaRequest, opts ...grpc.CallOption) (*MetaReply, error) {
+	out := new(MetaReply)
+	err := c.cc.Invoke(ctx, "/file.FileService/Meta", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &fileServiceMetaClient{stream}
-	return x, nil
-}
-
-type FileService_MetaClient interface {
-	Send(*MetaRequest) error
-	CloseAndRecv() (*MetaReply, error)
-	grpc.ClientStream
-}
-
-type fileServiceMetaClient struct {
-	grpc.ClientStream
-}
-
-func (x *fileServiceMetaClient) Send(m *MetaRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *fileServiceMetaClient) CloseAndRecv() (*MetaReply, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(MetaReply)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return out, nil
 }
 
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility
 type FileServiceServer interface {
-	ReadFile(FileService_ReadFileServer) error
-	Ls(FileService_LsServer) error
-	Meta(FileService_MetaServer) error
+	ReadFile(*ReadFileRequest, FileService_ReadFileServer) error
+	Ls(context.Context, *LsRequest) (*LsReply, error)
+	Meta(context.Context, *MetaRequest) (*MetaReply, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -148,14 +99,14 @@ type FileServiceServer interface {
 type UnimplementedFileServiceServer struct {
 }
 
-func (UnimplementedFileServiceServer) ReadFile(FileService_ReadFileServer) error {
+func (UnimplementedFileServiceServer) ReadFile(*ReadFileRequest, FileService_ReadFileServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReadFile not implemented")
 }
-func (UnimplementedFileServiceServer) Ls(FileService_LsServer) error {
-	return status.Errorf(codes.Unimplemented, "method Ls not implemented")
+func (UnimplementedFileServiceServer) Ls(context.Context, *LsRequest) (*LsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ls not implemented")
 }
-func (UnimplementedFileServiceServer) Meta(FileService_MetaServer) error {
-	return status.Errorf(codes.Unimplemented, "method Meta not implemented")
+func (UnimplementedFileServiceServer) Meta(context.Context, *MetaRequest) (*MetaReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Meta not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 
@@ -171,12 +122,15 @@ func RegisterFileServiceServer(s grpc.ServiceRegistrar, srv FileServiceServer) {
 }
 
 func _FileService_ReadFile_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(FileServiceServer).ReadFile(&fileServiceReadFileServer{stream})
+	m := new(ReadFileRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(FileServiceServer).ReadFile(m, &fileServiceReadFileServer{stream})
 }
 
 type FileService_ReadFileServer interface {
 	Send(*ReadFileReply) error
-	Recv() (*ReadFileRequest, error)
 	grpc.ServerStream
 }
 
@@ -188,64 +142,40 @@ func (x *fileServiceReadFileServer) Send(m *ReadFileReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *fileServiceReadFileServer) Recv() (*ReadFileRequest, error) {
-	m := new(ReadFileRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _FileService_Ls_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LsRequest)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(FileServiceServer).Ls(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/file.FileService/Ls",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).Ls(ctx, req.(*LsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-func _FileService_Ls_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(FileServiceServer).Ls(&fileServiceLsServer{stream})
-}
-
-type FileService_LsServer interface {
-	SendAndClose(*LsReply) error
-	Recv() (*LsRequest, error)
-	grpc.ServerStream
-}
-
-type fileServiceLsServer struct {
-	grpc.ServerStream
-}
-
-func (x *fileServiceLsServer) SendAndClose(m *LsReply) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *fileServiceLsServer) Recv() (*LsRequest, error) {
-	m := new(LsRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _FileService_Meta_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MetaRequest)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
-}
-
-func _FileService_Meta_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(FileServiceServer).Meta(&fileServiceMetaServer{stream})
-}
-
-type FileService_MetaServer interface {
-	SendAndClose(*MetaReply) error
-	Recv() (*MetaRequest, error)
-	grpc.ServerStream
-}
-
-type fileServiceMetaServer struct {
-	grpc.ServerStream
-}
-
-func (x *fileServiceMetaServer) SendAndClose(m *MetaReply) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *fileServiceMetaServer) Recv() (*MetaRequest, error) {
-	m := new(MetaRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
+	if interceptor == nil {
+		return srv.(FileServiceServer).Meta(ctx, in)
 	}
-	return m, nil
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/file.FileService/Meta",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).Meta(ctx, req.(*MetaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
@@ -254,23 +184,21 @@ func (x *fileServiceMetaServer) Recv() (*MetaRequest, error) {
 var FileService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "file.FileService",
 	HandlerType: (*FileServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Ls",
+			Handler:    _FileService_Ls_Handler,
+		},
+		{
+			MethodName: "Meta",
+			Handler:    _FileService_Meta_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "ReadFile",
 			Handler:       _FileService_ReadFile_Handler,
 			ServerStreams: true,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "Ls",
-			Handler:       _FileService_Ls_Handler,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "Meta",
-			Handler:       _FileService_Meta_Handler,
-			ClientStreams: true,
 		},
 	},
 	Metadata: "streaming_service.proto",

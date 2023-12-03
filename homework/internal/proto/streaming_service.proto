@@ -5,9 +5,9 @@ package file;
 option go_package = "./filepb";
 
 service FileService {
-  rpc ReadFile(stream ReadFileRequest) returns (stream ReadFileReply);
-  rpc Ls(stream LsRequest) returns (LsReply);
-  rpc Meta(stream MetaRequest) returns (MetaReply);
+  rpc ReadFile(ReadFileRequest) returns (stream ReadFileReply) {}
+  rpc Ls(LsRequest) returns (LsReply) {}
+  rpc Meta(MetaRequest) returns (MetaReply) {}
 }
 
 message ReadFileRequest {
