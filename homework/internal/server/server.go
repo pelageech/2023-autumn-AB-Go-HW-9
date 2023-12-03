@@ -16,15 +16,15 @@ import (
 
 const PacketSize = 4 << 10 // 4 KiB
 
-type GRPCServer struct {
-	filepb.UnimplementedFileServiceServer
-	fileService Service
-}
-
 type Service interface {
 	ReadFile(ctx context.Context, path models.FilePath) ([]byte, error)
 	Ls(ctx context.Context, path models.FilePath) ([]models.FileName, error)
 	Meta(ctx context.Context, path models.FilePath) (fs.FileInfo, error)
+}
+
+type GRPCServer struct {
+	filepb.UnimplementedFileServiceServer
+	fileService Service
 }
 
 func (s *GRPCServer) ReadFile(req *filepb.ReadFileRequest, server filepb.FileService_ReadFileServer) error {

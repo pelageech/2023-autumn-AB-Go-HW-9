@@ -1,6 +1,7 @@
 package fileservice_test
 
 import (
+	"context"
 	"io/fs"
 	"reflect"
 	"strings"
@@ -34,6 +35,7 @@ func (i *mapFileInfo) String() string {
 
 type mockFS = fstest.MapFS
 
+var ctx = context.Background()
 var testfs = mockFS{
 	"bin/internal/usr/game": &fstest.MapFile{
 		Data: []byte("super game!"),
@@ -70,7 +72,7 @@ func TestService_Ls(t *testing.T) {
 	s := fileservice.New(testfs)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.Ls(tt.args.path)
+			got, err := s.Ls(ctx, tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ls() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -114,7 +116,7 @@ func TestService_Meta(t *testing.T) {
 	s := fileservice.New(testfs)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.Meta(tt.args.path)
+			got, err := s.Meta(ctx, tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Meta() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -146,7 +148,7 @@ func TestService_ReadFile(t *testing.T) {
 	s := fileservice.New(testfs)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.ReadFile(tt.args.path)
+			got, err := s.ReadFile(ctx, tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ReadFile() error = %v, wantErr %v", err, tt.wantErr)
 				return

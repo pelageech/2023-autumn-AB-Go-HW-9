@@ -2,6 +2,8 @@ package fileservice
 
 import (
 	"bufio"
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -21,7 +23,13 @@ func New(fs ReadDirFS) *Service {
 	return &Service{fs: fs}
 }
 
-func (s *Service) ReadFile(path models.FilePath) ([]byte, error) {
+func (s *Service) ReadFile(ctx context.Context, path models.FilePath) (_ []byte, err error) {
+	defer func() {
+		if ctx.Err() != nil {
+			err = errors.Join(err, ctx.Err())
+		}
+	}()
+
 	f, err := s.fs.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("file open error: %w", err)
@@ -36,7 +44,13 @@ func (s *Service) ReadFile(path models.FilePath) ([]byte, error) {
 	return b, nil
 }
 
-func (s *Service) Ls(path models.FilePath) ([]models.FileName, error) {
+func (s *Service) Ls(ctx context.Context, path models.FilePath) (_ []models.FileName, err error) {
+	defer func() {
+		if ctx.Err() != nil {
+			err = errors.Join(err, ctx.Err())
+		}
+	}()
+
 	dir, err := s.fs.ReadDir(path)
 	if err != nil {
 		return nil, fmt.Errorf("read dir error: %w", err)
@@ -50,7 +64,13 @@ func (s *Service) Ls(path models.FilePath) ([]models.FileName, error) {
 	return filenames, nil
 }
 
-func (s *Service) Meta(path models.FilePath) (fs.FileInfo, error) {
+func (s *Service) Meta(ctx context.Context, path models.FilePath) (_ fs.FileInfo, err error) {
+	defer func() {
+		if ctx.Err() != nil {
+			err = errors.Join(err, ctx.Err())
+		}
+	}()
+
 	f, err := s.fs.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("file open error: %w", err)
