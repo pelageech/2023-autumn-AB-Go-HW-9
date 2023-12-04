@@ -1,6 +1,8 @@
 name: golangci-lint
 on:
   push:
+    tags:
+      - v*
     branches:
       - master
       - main
@@ -20,7 +22,6 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '1.21'
-          cache: false
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
