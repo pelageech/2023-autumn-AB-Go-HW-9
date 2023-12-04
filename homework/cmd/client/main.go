@@ -39,9 +39,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ans, err := cli.Ls(ctx, &proto.LsRequest{Dir: "internal"})
+	ans, _ := cli.Ls(ctx, &proto.LsRequest{Dir: "internal"})
 	log.Printf("%v\n", ans)
-	c, err := cli.ReadFile(ctx, &proto.ReadFileRequest{Name: "internal/fileservice/fs.go"})
+	c, _ := cli.ReadFile(ctx, &proto.ReadFileRequest{Name: "internal/fileservice/fs.go"})
 
 	buf := new(bytes.Buffer)
 	for {
