@@ -44,10 +44,6 @@ func ValidateInterceptor(
 	return handler(ctx, req)
 }
 
-func StreamValidateInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	return handler(srv, ss)
-}
-
 type Validator interface {
 	Validate() error
 }
