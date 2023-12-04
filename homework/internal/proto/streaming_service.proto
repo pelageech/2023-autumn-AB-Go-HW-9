@@ -2,16 +2,18 @@ syntax = "proto3";
 
 package file;
 
-option go_package = "./filepb";
+import "validate/validate.proto";
+
+option go_package = "./proto";
 
 service FileService {
-  rpc ReadFile(ReadFileRequest) returns (stream ReadFileReply) {}
-  rpc Ls(LsRequest) returns (LsReply) {}
-  rpc Meta(MetaRequest) returns (MetaReply) {}
+  rpc ReadFile(ReadFileRequest) returns (stream ReadFileReply);
+  rpc Ls(LsRequest) returns (LsReply);
+  rpc Meta(MetaRequest) returns (MetaReply);
 }
 
 message ReadFileRequest {
-  string Name = 1;
+  string Name = 1 [(validate.rules).string.pattern = "^(/)?([^/\0]+(/)?)+$"];
 }
 
 message ReadFileReply {
@@ -19,7 +21,7 @@ message ReadFileReply {
 }
 
 message LsRequest {
-  string Dir = 1;
+  string Dir = 1 [(validate.rules).string.pattern = "^(/)?([^/\0]+(/)?)+$"];
 }
 
 message LsReply {
@@ -27,7 +29,7 @@ message LsReply {
 }
 
 message MetaRequest {
-  string Name = 1;
+  string Name = 1 [(validate.rules).string.pattern = "^(/)?([^/\0]+(/)?)+$"];
 }
 
 message MetaReply {
