@@ -4,3 +4,4 @@ blocking: yes
 write_buffer_size: 4096
 logger:
   time_format: "2006-01-02 15:04:05"
+  output: stdout

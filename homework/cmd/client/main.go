@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"errors"
 	"io"
+	"os"
 	"time"
 
 	"github.com/charmbracelet/log"
@@ -20,15 +21,20 @@ import (
 var byteConfig []byte
 
 func main() {
-	cfg := new(grpcinternal.ClientConfig)
+	cfg := new(config.ClientConfig)
 	if err := yaml.Unmarshal(byteConfig, cfg); err != nil {
 		log.Fatal(err)
+	}
+
+	logOpts := log.Options{ReportTimestamp: true}
+	if cfg.Logger.TimeFormat != nil {
+		logOpts.TimeFormat = *cfg.Logger.TimeFormat
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	cli, err := config.NewClient(ctx, cfg)
+	cli, err := grpcinternal.NewClient(ctx, log.NewWithOptions(os.Stdout, logOpts), cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
