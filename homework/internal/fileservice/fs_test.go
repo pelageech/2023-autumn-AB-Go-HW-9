@@ -1,37 +1,20 @@
 package fileservice_test
 
 import (
+	"bytes"
 	"context"
 	"io/fs"
 	"reflect"
 	"strings"
 	"testing"
 	"testing/fstest"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"homework/internal/fileservice"
 	"homework/internal/models"
+	"homework/pkg/iterator"
 )
-
-type mapFileInfo struct {
-	name string
-	f    *fstest.MapFile
-}
-
-func (i *mapFileInfo) Name() string               { return i.name }
-func (i *mapFileInfo) Size() int64                { return int64(len(i.f.Data)) }
-func (i *mapFileInfo) Mode() fs.FileMode          { return i.f.Mode }
-func (i *mapFileInfo) Type() fs.FileMode          { return i.f.Mode.Type() }
-func (i *mapFileInfo) ModTime() time.Time         { return i.f.ModTime }
-func (i *mapFileInfo) IsDir() bool                { return i.f.Mode&fs.ModeDir != 0 }
-func (i *mapFileInfo) Sys() any                   { return i.f.Sys }
-func (i *mapFileInfo) Info() (fs.FileInfo, error) { return i, nil }
-
-func (i *mapFileInfo) String() string {
-	return fs.FormatFileInfo(i)
-}
 
 type mockFS = fstest.MapFS
 
@@ -94,22 +77,18 @@ func TestService_Meta(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    fs.FileInfo
+		want    *models.FileInfo
 		wantErr bool
 	}{
 		{"file_not_exist_error", args{"bin/aboba"}, nil, true},
-		{"file_OK", args{"bin/internal/usr/game"}, &mapFileInfo{
-			name: "game",
-			f: &fstest.MapFile{
-				Data: []byte("super game!"),
-				Mode: 0o766,
-			},
+		{"file_OK", args{"bin/internal/usr/game"}, &models.FileInfo{
+			Size:  11,
+			Mode:  0o766,
+			IsDir: false,
 		}, false},
-		{"folder_OK", args{"bin/internal"}, &mapFileInfo{
-			name: "internal",
-			f: &fstest.MapFile{
-				Mode: 0o000 | fs.ModeDir,
-			},
+		{"folder_OK", args{"bin/internal"}, &models.FileInfo{
+			Size:  0,
+			IsDir: true,
 		}, false},
 	}
 
@@ -121,10 +100,7 @@ func TestService_Meta(t *testing.T) {
 				t.Errorf("Meta() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if tt.wantErr != true && !(got.Name() == tt.want.Name() &&
-				got.IsDir() == tt.want.IsDir() &&
-				got.Size() == tt.want.Size() &&
-				got.Mode() == tt.want.Mode()) {
+			if err == nil && (*tt.want != *got) {
 				t.Errorf("Meta() got = %v, want %v", got, tt.want)
 			}
 		})
@@ -146,13 +122,29 @@ func TestService_ReadFile(t *testing.T) {
 		{"folder_error", args{"bin/internal"}, nil, true},
 	}
 	s := fileservice.New(testfs)
+
+	buf := bytes.NewBuffer([]byte{})
 	for _, tt := range tests {
+		buf.Reset()
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.ReadFile(ctx, tt.args.path)
+			i, err := s.ReadFileIterator(ctx, tt.args.path)
+			if err == nil {
+				err = iterator.Iterate(i, func(b []byte) error {
+					_, _ = buf.Write(b)
+					return nil
+				})
+			}
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ReadFile() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			if err != nil {
+				return
+			}
+
+			got := buf.Bytes()
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ReadFile() got = %v, want %v", got, tt.want)
 			}

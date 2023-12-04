@@ -5,11 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 
 	"homework/internal/models"
+	"homework/pkg/iterator"
 )
+
+// packetSize is 4KiB - a size which write() operation
+// can process in one step (writing a system block).
+const packetSize = 4 << 10 // 4 KiB
 
 type ReadDirFS interface {
 	fs.ReadDirFS
@@ -23,25 +27,15 @@ func New(fs ReadDirFS) *Service {
 	return &Service{fs: fs}
 }
 
-func (s *Service) ReadFile(ctx context.Context, path models.FilePath) (_ []byte, err error) {
-	defer func() {
-		if ctx.Err() != nil {
-			err = errors.Join(err, ctx.Err())
-		}
-	}()
-
+func (s *Service) ReadFileIterator(ctx context.Context, path models.FilePath) (_ iterator.Interface[[]byte], err error) {
 	f, err := s.fs.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("file open error: %w", err)
 	}
 
 	buf := bufio.NewReader(f)
-	b, err := io.ReadAll(buf)
-	if err != nil {
-		return nil, fmt.Errorf("file read error: %w", err)
-	}
 
-	return b, nil
+	return iterator.Reader(ctx, buf, packetSize), nil
 }
 
 func (s *Service) Ls(ctx context.Context, path models.FilePath) (_ []models.FileName, err error) {
@@ -64,7 +58,7 @@ func (s *Service) Ls(ctx context.Context, path models.FilePath) (_ []models.File
 	return filenames, nil
 }
 
-func (s *Service) Meta(ctx context.Context, path models.FilePath) (_ fs.FileInfo, err error) {
+func (s *Service) Meta(ctx context.Context, path models.FilePath) (_ *models.FileInfo, err error) {
 	defer func() {
 		if ctx.Err() != nil {
 			err = errors.Join(err, ctx.Err())
@@ -81,5 +75,11 @@ func (s *Service) Meta(ctx context.Context, path models.FilePath) (_ fs.FileInfo
 		return nil, fmt.Errorf("file stat read error: %w", err)
 	}
 
-	return stat, nil
+	info := &models.FileInfo{
+		Size:  stat.Size(),
+		Mode:  uint32(stat.Mode().Perm()),
+		IsDir: stat.IsDir(),
+	}
+
+	return info, nil
 }

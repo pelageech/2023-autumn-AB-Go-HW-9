@@ -2,57 +2,48 @@ package server
 
 import (
 	"context"
-	"errors"
-	"io"
-	"io/fs"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"homework/internal/models"
 	filepb "homework/internal/proto"
-	hwslices "homework/pkg/slices"
+	"homework/pkg/iterator"
 )
 
 const PacketSize = 4 << 10 // 4 KiB
 
-type Service interface {
-	ReadFile(ctx context.Context, path models.FilePath) ([]byte, error)
+//go:generate go run github.com/vektra/mockery/v2@v2.38.0 --name=FileService
+type FileService interface {
 	Ls(ctx context.Context, path models.FilePath) ([]models.FileName, error)
-	Meta(ctx context.Context, path models.FilePath) (fs.FileInfo, error)
+	Meta(ctx context.Context, path models.FilePath) (*models.FileInfo, error)
+	ReadFileIterator(ctx context.Context, path models.FilePath) (iterator.Interface[[]byte], error)
 }
 
 type GRPCServer struct {
 	filepb.UnimplementedFileServiceServer
-	fileService Service
+	fileService FileService
+}
+
+func New(service FileService) *GRPCServer {
+	return &GRPCServer{fileService: service}
 }
 
 func (s *GRPCServer) ReadFile(req *filepb.ReadFileRequest, server filepb.FileService_ReadFileServer) error {
-	if req.Name == "" {
-		return status.Errorf(codes.InvalidArgument, "file path is empty")
+	i, err := s.fileService.ReadFileIterator(server.Context(), req.Name)
+	if err != nil {
+		return status.Errorf(codes.Internal, "init iterator error: %v", err)
 	}
 
-	b, err := s.fileService.ReadFile(server.Context(), req.Name)
-	if err != nil && !errors.Is(err, io.EOF) {
-		return status.Errorf(codes.Internal, "read file error: %v", err)
-	}
-
-	packets := hwslices.Split(b, PacketSize)
-
-	for _, p := range packets {
-		if err := server.Send(&filepb.ReadFileReply{Stream: p}); err != nil {
+	return iterator.Iterate(i, func(b []byte) error {
+		if err := server.Send(&filepb.ReadFileReply{Stream: b}); err != nil {
 			return status.Errorf(codes.Internal, "send file error: %v", err)
 		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func (s *GRPCServer) Ls(ctx context.Context, req *filepb.LsRequest) (*filepb.LsReply, error) {
-	if req.Dir == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "file path is empty")
-	}
-
 	filenames, err := s.fileService.Ls(ctx, req.Dir)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "server error: %v", err)
@@ -61,19 +52,15 @@ func (s *GRPCServer) Ls(ctx context.Context, req *filepb.LsRequest) (*filepb.LsR
 	return &filepb.LsReply{Files: filenames}, nil
 }
 func (s *GRPCServer) Meta(ctx context.Context, req *filepb.MetaRequest) (*filepb.MetaReply, error) {
-	if req.Name == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "file path is empty")
-	}
-
 	stat, err := s.fileService.Meta(ctx, req.Name)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "server error: %v", err)
 	}
 
 	metaReply := &filepb.MetaReply{
-		Size:  stat.Size(),
-		Mode:  uint32(stat.Mode()),
-		IsDir: stat.IsDir(),
+		Size:  stat.Size,
+		Mode:  stat.Mode,
+		IsDir: stat.IsDir,
 	}
 
 	return metaReply, nil
