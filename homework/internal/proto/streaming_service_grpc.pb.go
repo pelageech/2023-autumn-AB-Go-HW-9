@@ -4,7 +4,7 @@
 // - protoc             v4.23.4
 // source: streaming_service.proto
 
-package filepb
+package proto
 
 import (
 	context "context"
