@@ -122,7 +122,7 @@ func (s *grpcSuite) TestGRPCServer_ReadFileIterator() {
 					r, err = cli.Recv()
 					if errors.Is(err, io.EOF) {
 						err = nil
-						return
+						break
 					}
 					if err != nil {
 						break
