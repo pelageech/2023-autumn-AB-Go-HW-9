@@ -28,7 +28,7 @@ func TestReaderIterator(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			buf.Reset()
-			i := Reader(context.Background(), tt.fields.r, tt.fields.bufSize)
+			i := NewReaderIterator(context.Background(), tt.fields.r, tt.fields.bufSize)
 			err := Iterate[[]byte](i, func(b []byte) error {
 				buf.Write(b)
 				return nil

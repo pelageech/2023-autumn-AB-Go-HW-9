@@ -6,6 +6,8 @@ import (
 	"io"
 )
 
+// ReaderIterator is an iterator that reads io.Reader by chunks.
+// It implements Simple.
 type ReaderIterator struct {
 	r   io.Reader
 	eof bool
@@ -13,7 +15,8 @@ type ReaderIterator struct {
 	ctx context.Context
 }
 
-func Reader(ctx context.Context, r io.Reader, bufSize int) *ReaderIterator {
+// NewReaderIterator created new ReaderIterator.
+func NewReaderIterator(ctx context.Context, r io.Reader, bufSize int) *ReaderIterator {
 	return &ReaderIterator{
 		r:   r,
 		buf: make([]byte, bufSize),
@@ -34,4 +37,8 @@ func (i *ReaderIterator) Next() ([]byte, error) {
 	}
 
 	return i.buf[:n], i.ctx.Err()
+}
+
+func (i *ReaderIterator) Reader() io.Reader {
+	return i.r
 }
