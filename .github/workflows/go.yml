@@ -27,6 +27,12 @@ jobs:
           go mod tidy
           go build -v ./...
 
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: ./homework
+
       - name: Test
         working-directory: ./homework
         run: |
