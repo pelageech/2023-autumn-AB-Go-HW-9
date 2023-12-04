@@ -129,7 +129,7 @@ func TestService_ReadFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			i, err := s.ReadFileIterator(ctx, tt.args.path)
 			if err == nil {
-				err = iterator.Iterate(i, func(b []byte) error {
+				err = iterator.Iterate(iterator.Simple[[]byte](i), func(b []byte) error {
 					_, _ = buf.Write(b)
 					return nil
 				})

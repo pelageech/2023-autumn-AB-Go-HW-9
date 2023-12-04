@@ -1,7 +1,6 @@
 package fileservice
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -15,29 +14,33 @@ import (
 // can process in one step (writing a system block).
 const packetSize = 4 << 10 // 4 KiB
 
-type ReadDirFS interface {
+// RepositoryFS is an equivalent to the file system interface.
+type RepositoryFS interface {
 	fs.ReadDirFS
 }
 
 type Service struct {
-	fs ReadDirFS
+	fs RepositoryFS
 }
 
-func New(fs ReadDirFS) *Service {
+func New(fs RepositoryFS) *Service {
 	return &Service{fs: fs}
 }
 
-func (s *Service) ReadFileIterator(ctx context.Context, path models.FilePath) (_ iterator.Interface[[]byte], err error) {
+// ReadFileIterator opens a file on FS and returns an iterator *iterator.ReaderIterator.
+// Note that the method doesn't close the file.
+//
+// The iterator contains the reader that implements io.ReadCloser.
+func (s *Service) ReadFileIterator(ctx context.Context, path models.FilePath) (_ *iterator.ReaderIterator, err error) {
 	f, err := s.fs.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("file open error: %w", err)
 	}
 
-	buf := bufio.NewReader(f)
-
-	return iterator.Reader(ctx, buf, packetSize), nil
+	return iterator.NewReaderIterator(ctx, f, packetSize), nil
 }
 
+// Ls returns a list of files containing in the given path.
 func (s *Service) Ls(ctx context.Context, path models.FilePath) (_ []models.FileName, err error) {
 	defer func() {
 		if ctx.Err() != nil {
@@ -58,6 +61,7 @@ func (s *Service) Ls(ctx context.Context, path models.FilePath) (_ []models.File
 	return filenames, nil
 }
 
+// Meta returns meta-data of the file in path if exists.
 func (s *Service) Meta(ctx context.Context, path models.FilePath) (_ *models.FileInfo, err error) {
 	defer func() {
 		if ctx.Err() != nil {
