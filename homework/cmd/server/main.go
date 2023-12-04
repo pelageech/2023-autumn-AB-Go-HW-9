@@ -18,7 +18,6 @@ func main() {
 			grpcinternal.NewLoggerServerInterceptor(log.Default()),
 			grpcinternal.ValidateInterceptor,
 		),
-		grpc.StreamInterceptor(grpcinternal.StreamValidateInterceptor),
 	)
 	if err != nil {
 		log.Fatal(err)
