@@ -1,19 +1,17 @@
 package main
 
 import (
-	"io/fs"
-	"os"
-
 	"github.com/charmbracelet/log"
 	"google.golang.org/grpc"
 
 	"homework/internal/fileservice"
 	grpcinternal "homework/internal/grpc"
+	"homework/internal/repo/dirfs"
 )
 
 func main() {
 	gs, l, err := grpcinternal.NewGRPCServerPrepare(":50051",
-		fileservice.New(os.DirFS(".").(fs.ReadDirFS)),
+		fileservice.New(dirfs.New(".")),
 		grpc.ChainUnaryInterceptor(
 			grpcinternal.NewLoggerServerInterceptor(log.Default()),
 			grpcinternal.ValidateInterceptor,
