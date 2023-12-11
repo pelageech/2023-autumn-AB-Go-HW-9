@@ -19,10 +19,12 @@ type RepositoryFS interface {
 	fs.ReadDirFS
 }
 
+// Service contains methods for FS calls.
 type Service struct {
 	fs RepositoryFS
 }
 
+// New creates an implementation of a new Service.
 func New(fs RepositoryFS) *Service {
 	return &Service{fs: fs}
 }

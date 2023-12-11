@@ -21,26 +21,37 @@ import (
 var byteConfig []byte
 
 func main() {
+	// load config
 	cfg := new(config.ClientConfig)
 	if err := yaml.Unmarshal(byteConfig, cfg); err != nil {
 		log.Fatal(err)
 	}
 
+	// configure logger
 	logOpts := log.Options{ReportTimestamp: true}
 	if cfg.Logger.TimeFormat != nil {
 		logOpts.TimeFormat = *cfg.Logger.TimeFormat
 	}
 
+	logger := log.NewWithOptions(os.Stdout, logOpts)
+
+	// connection to the server
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	cli, err := grpcinternal.NewClient(ctx, log.NewWithOptions(os.Stdout, logOpts), cfg)
+	cli, err := grpcinternal.NewClient(ctx, logger, cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ans, _ := cli.Ls(ctx, &proto.LsRequest{Dir: "internal"})
+	// take request LS
+	ans, err := cli.Ls(ctx, &proto.LsRequest{Dir: "internal"})
+	if err != nil {
+		log.Fatal("Ls request error:", err)
+	}
 	log.Printf("%v\n", ans)
+
+	// take ReadFile request
 	c, _ := cli.ReadFile(ctx, &proto.ReadFileRequest{Name: "internal/fileservice/fs.go"})
 
 	buf := new(bytes.Buffer)

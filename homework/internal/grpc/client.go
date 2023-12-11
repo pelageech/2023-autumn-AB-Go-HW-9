@@ -33,7 +33,7 @@ func NewClient(ctx context.Context, logger *log.Logger, config *config.ClientCon
 
 	conn, err := grpc.DialContext(ctx, config.Addr,
 		append(
-			config.InitDialOptions(),
+			config.DialConfig.InitDialOptions(),
 			loggerInterceptor,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)...)

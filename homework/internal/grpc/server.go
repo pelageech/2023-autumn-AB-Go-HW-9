@@ -17,10 +17,19 @@ import (
 
 const PacketSize = 4 << 10 // 4 KiB
 
+// FileService provides some functions for working with fs.File
+// items.
+// All the methods support context.
+//
 //go:generate go run github.com/vektra/mockery/v2@v2.38.0 --name=FileService
 type FileService interface {
+	// Ls returns a list of files containing in the given path.
 	Ls(ctx context.Context, path models.FilePath) ([]models.FileName, error)
+
+	// Meta returns meta-data of the file in path if exists.
 	Meta(ctx context.Context, path models.FilePath) (*models.FileInfo, error)
+
+	// ReadFileIterator opens a file on FS and returns an iterator *iterator.ReaderIterator.
 	ReadFileIterator(ctx context.Context, path models.FilePath) (*iterator.ReaderIterator, error)
 }
 
