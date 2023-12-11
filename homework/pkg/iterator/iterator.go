@@ -1,5 +1,7 @@
 package iterator
 
+import "fmt"
+
 // Simple defines a default iterator. It is used for
 // Iterate function. You should use this function for iterating.
 type Simple[T any] interface {
@@ -21,11 +23,11 @@ func Iterate[T any](i Simple[T], f func(t T) error) error {
 
 	for t, err := i.Next(); i.HasNext(); t, err = i.Next() {
 		if err != nil {
-			return err
+			return fmt.Errorf("taking next value error: %w", err)
 		}
 
 		if err := f(t); err != nil {
-			return err
+			return fmt.Errorf("parameterized function error: %w", err)
 		}
 	}
 
