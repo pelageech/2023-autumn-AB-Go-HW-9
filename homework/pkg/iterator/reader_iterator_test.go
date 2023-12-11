@@ -26,9 +26,11 @@ func TestReaderIterator(t *testing.T) {
 
 	buf := bytes.NewBuffer([]byte{})
 	for _, tt := range tests {
+		bufIterator := make([]byte, tt.fields.bufSize)
+
 		t.Run(tt.name, func(t *testing.T) {
 			buf.Reset()
-			i := NewReaderIterator(context.Background(), tt.fields.r, tt.fields.bufSize)
+			i := NewReaderIterator(context.Background(), tt.fields.r, bufIterator)
 			err := Iterate[[]byte](i, func(b []byte) error {
 				buf.Write(b)
 				return nil

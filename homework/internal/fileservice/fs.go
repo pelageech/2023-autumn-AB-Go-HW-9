@@ -39,7 +39,7 @@ func (s *Service) ReadFileIterator(ctx context.Context, path models.FilePath) (_
 		return nil, fmt.Errorf("file open error: %w", err)
 	}
 
-	return iterator.NewReaderIterator(ctx, f, packetSize), nil
+	return iterator.NewReaderIterator(ctx, f, make([]byte, packetSize)), nil
 }
 
 // Ls returns a list of files containing in the given path.

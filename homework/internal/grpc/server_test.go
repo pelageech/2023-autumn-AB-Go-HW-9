@@ -107,7 +107,7 @@ func (s *grpcSuite) TestGRPCServer_ReadFileIterator() {
 		Return(nil, fs.ErrInvalid).Once()
 	for _, t := range tests[1:] {
 		s.fileService.On("ReadFileIterator", mock.Anything, t.args.name).
-			Return(iterator.NewReaderIterator(context.Background(), io.NopCloser(bytes.NewReader(t.want)), 4<<10), nil).Once()
+			Return(iterator.NewReaderIterator(context.Background(), io.NopCloser(bytes.NewReader(t.want)), make([]byte, 4<<10)), nil).Once()
 	}
 
 	var r *filepb.ReadFileReply

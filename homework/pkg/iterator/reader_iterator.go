@@ -16,10 +16,10 @@ type ReaderIterator struct {
 }
 
 // NewReaderIterator created new ReaderIterator.
-func NewReaderIterator(ctx context.Context, r io.Reader, bufSize int) *ReaderIterator {
+func NewReaderIterator(ctx context.Context, r io.Reader, buf []byte) *ReaderIterator {
 	return &ReaderIterator{
 		r:   r,
-		buf: make([]byte, bufSize),
+		buf: buf,
 		ctx: ctx,
 	}
 }
