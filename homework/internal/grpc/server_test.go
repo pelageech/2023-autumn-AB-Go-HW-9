@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"math/rand"
@@ -83,6 +84,22 @@ func (s *grpcSuite) TearDownSuite() {
 	s.T().Log("listener closed")
 }
 
+const maxReadIterationsCount = 3
+
+type badReader struct {
+	r io.Reader
+	i int
+}
+
+func (r *badReader) Read(b []byte) (int, error) {
+	if r.i >= maxReadIterationsCount {
+		return 0, fmt.Errorf("test error")
+	}
+	r.i++
+
+	return r.r.Read(b)
+}
+
 func (s *grpcSuite) TestGRPCServer_ReadFileIterator() {
 	rndm := rand.New(rand.NewSource(42))
 	b := make([]byte, 8<<20)
@@ -97,6 +114,7 @@ func (s *grpcSuite) TestGRPCServer_ReadFileIterator() {
 		wantErr bool
 	}{
 		{"invalid path", args{name: ":.<%fkv'`"}, nil, true},
+		{"error while reading", args{name: "bad.wncry"}, nil, true},
 		{"empty file", args{name: "empty.txt"}, []byte{}, false},
 		{"small file", args{name: "small.txt"}, b[:1<<10], false},
 		{"ordinary file", args{name: "ordinary.txt"}, b[:8<<10], false},
@@ -105,7 +123,11 @@ func (s *grpcSuite) TestGRPCServer_ReadFileIterator() {
 
 	s.fileService.On("ReadFileIterator", mock.Anything, tests[0].args.name).
 		Return(nil, fs.ErrInvalid).Once()
-	for _, t := range tests[1:] {
+
+	s.fileService.On("ReadFileIterator", mock.Anything, tests[1].args.name).
+		Return(iterator.NewReaderIterator(context.Background(), io.NopCloser(&badReader{r: bytes.NewReader(b[:6])}), make([]byte, 1)), nil).Once()
+
+	for _, t := range tests[2:] {
 		s.fileService.On("ReadFileIterator", mock.Anything, t.args.name).
 			Return(iterator.NewReaderIterator(context.Background(), io.NopCloser(bytes.NewReader(t.want)), make([]byte, 4<<10)), nil).Once()
 	}
