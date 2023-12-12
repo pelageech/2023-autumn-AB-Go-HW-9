@@ -132,12 +132,14 @@ func (s *grpcSuite) TestGRPCServer_ReadFileIterator() {
 			Return(iterator.NewReaderIterator(context.Background(), io.NopCloser(bytes.NewReader(t.want)), make([]byte, 4<<10)), nil).Once()
 	}
 
-	var r *filepb.ReadFileReply
-	buf := bytes.NewBuffer([]byte{})
-
 	for _, tt := range tests {
-		buf.Reset()
 		s.Run(tt.name, func() {
+			tt := tt
+			s.T().Parallel()
+
+			var r *filepb.ReadFileReply
+			buf := bytes.NewBuffer([]byte{})
+
 			cli, err := s.client.ReadFile(context.Background(), &filepb.ReadFileRequest{Name: tt.args.name})
 			if err == nil {
 				for {
@@ -194,6 +196,9 @@ func (s *grpcSuite) TestGRPCServer_Ls() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
+			tt := tt
+			s.T().Parallel()
+
 			cli, err := s.client.Ls(context.Background(), &filepb.LsRequest{Dir: tt.args.name})
 
 			if (err != nil) != tt.wantErr {
@@ -235,6 +240,9 @@ func (s *grpcSuite) TestGRPCServer_Meta() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
+			tt := tt
+			s.T().Parallel()
+
 			r, err := s.client.Meta(context.Background(), &filepb.MetaRequest{Name: tt.args.name})
 
 			if (err != nil) != tt.wantErr {
