@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -125,14 +126,14 @@ func (s *grpcSuite) TestGRPCServer_ReadFileIterator() {
 		{"large file", args{name: "large.txt"}, b, false},
 	}
 
-	s.fileService.EXPECT().ReadFileIterator(context.Background(), tests[0].args.name).
+	s.fileService.EXPECT().ReadFileIterator(mock.Anything, tests[0].args.name).
 		Return(nil, fs.ErrInvalid).Once()
 
-	s.fileService.EXPECT().ReadFileIterator(context.Background(), tests[1].args.name).
+	s.fileService.EXPECT().ReadFileIterator(mock.Anything, tests[1].args.name).
 		Return(iterator.NewReaderIterator(context.Background(), io.NopCloser(&badReader{r: bytes.NewReader(b[:6])}), make([]byte, 1)), nil).Once()
 
 	for _, t := range tests[2:] {
-		s.fileService.EXPECT().ReadFileIterator(context.Background(), t.args.name).
+		s.fileService.EXPECT().ReadFileIterator(mock.Anything, t.args.name).
 			Return(iterator.NewReaderIterator(context.Background(), io.NopCloser(bytes.NewReader(t.want)), make([]byte, 4<<10)), nil).Once()
 	}
 
@@ -191,10 +192,10 @@ func (s *grpcSuite) TestGRPCServer_Ls() {
 		{"many files", args{name: "many"}, []models.FileName{"aboba1", "aboba2", "aboba3"}, false},
 	}
 
-	s.fileService.EXPECT().Ls(context.Background(), tests[0].args.name).
+	s.fileService.EXPECT().Ls(mock.Anything, tests[0].args.name).
 		Return(nil, fs.ErrInvalid).Once()
 	for _, t := range tests[1:] {
-		s.fileService.EXPECT().Ls(context.Background(), t.args.name).
+		s.fileService.EXPECT().Ls(mock.Anything, t.args.name).
 			Return(t.want, nil).Once()
 	}
 
@@ -235,10 +236,10 @@ func (s *grpcSuite) TestGRPCServer_Meta() {
 		{"one file", args{name: "one"}, &models.FileInfo{Size: 1987, Mode: 0o145, IsDir: false}, false},
 	}
 
-	s.fileService.EXPECT().Meta(context.Background(), tests[0].args.name).
+	s.fileService.EXPECT().Meta(mock.Anything, tests[0].args.name).
 		Return(nil, fs.ErrInvalid).Once()
 	for _, t := range tests[1:] {
-		s.fileService.EXPECT().Meta(context.Background(), t.args.name).
+		s.fileService.EXPECT().Meta(mock.Anything, t.args.name).
 			Return(t.want, nil).Once()
 	}
 
