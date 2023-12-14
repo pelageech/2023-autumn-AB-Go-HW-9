@@ -14,9 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+
+	"homework/internal/config"
 
 	"homework/internal/grpc/mocks"
 	"homework/internal/models"
@@ -29,31 +32,35 @@ type grpcSuite struct {
 	fileService *mocks.FileService
 	grpcserver  *grpc.Server
 	listener    *bufconn.Listener
-	conn        *grpc.ClientConn
 
 	server filepb.FileServiceServer
-	client filepb.FileServiceClient
+	client *Client
 }
 
 func (s *grpcSuite) SetupSuite() {
 	s.fileService = &mocks.FileService{}
 	s.server = NewFileServiceServer(s.fileService)
+
 	s.listener = bufconn.Listen(1 << 20)
 	s.T().Log("listener configured")
+
 	s.grpcserver = grpc.NewServer()
 	s.T().Log("server configured")
 
+	cfg := &config.Client{Addr: "bufnet"}
 	bufDialer := func(context.Context, string) (net.Conn, error) {
 		return s.listener.Dial()
 	}
-	conn, err := grpc.DialContext(context.Background(), "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	client, err := NewClient(context.Background(), zap.S(), cfg,
+		grpc.WithContextDialer(bufDialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	if err != nil {
 		s.Error(err)
 	}
-	s.T().Log("conn configured")
+	s.T().Log("client configured")
 
-	s.conn = conn
-	s.client = filepb.NewFileServiceClient(conn)
+	s.client = client
 	s.T().Log("client configured")
 
 	filepb.RegisterFileServiceServer(s.grpcserver, s.server)
@@ -68,7 +75,7 @@ func (s *grpcSuite) SetupSuite() {
 }
 
 func (s *grpcSuite) TearDownSuite() {
-	err := s.conn.Close()
+	err := s.client.CloseConn()
 	if err != nil {
 		s.Error(err)
 	}
