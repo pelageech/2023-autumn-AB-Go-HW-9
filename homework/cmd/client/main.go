@@ -6,9 +6,9 @@ import (
 	_ "embed"
 	"errors"
 	"io"
+	"log"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
