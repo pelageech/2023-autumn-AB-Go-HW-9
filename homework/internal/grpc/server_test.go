@@ -33,18 +33,16 @@ type grpcSuite struct {
 	grpcserver  *grpc.Server
 	listener    *bufconn.Listener
 
-	server filepb.FileServiceServer
 	client *Client
 }
 
 func (s *grpcSuite) SetupSuite() {
 	s.fileService = &mocks.FileService{}
-	s.server = NewFileServiceServer(s.fileService)
 
 	s.listener = bufconn.Listen(1 << 20)
 	s.T().Log("listener configured")
 
-	s.grpcserver = grpc.NewServer()
+	s.grpcserver = NewGRPCServerPrepare(s.fileService)
 	s.T().Log("server configured")
 
 	cfg := &config.Client{Addr: "bufnet"}
@@ -62,9 +60,6 @@ func (s *grpcSuite) SetupSuite() {
 
 	s.client = client
 	s.T().Log("client configured")
-
-	filepb.RegisterFileServiceServer(s.grpcserver, s.server)
-	s.T().Log("server registered")
 
 	go func() {
 		err = s.grpcserver.Serve(s.listener)

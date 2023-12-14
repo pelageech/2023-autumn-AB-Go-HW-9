@@ -2,9 +2,7 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"io"
-	"net"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -42,16 +40,11 @@ func NewFileServiceServer(service FileService) *Server {
 	return &Server{fileService: service}
 }
 
-func NewGRPCServerPrepare(addr string, service FileService, op ...grpc.ServerOption) (*grpc.Server, net.Listener, error) {
-	l, err := net.Listen("tcp", addr)
-	if err != nil {
-		return nil, nil, fmt.Errorf("server not configured: %w", err)
-	}
-
+func NewGRPCServerPrepare(service FileService, op ...grpc.ServerOption) *grpc.Server {
 	gs := grpc.NewServer(op...)
 	filepb.RegisterFileServiceServer(gs, NewFileServiceServer(service))
 
-	return gs, l, err
+	return gs
 }
 
 func (s *Server) ReadFile(req *filepb.ReadFileRequest, server filepb.FileService_ReadFileServer) error {
