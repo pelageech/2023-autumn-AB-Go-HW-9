@@ -3,10 +3,27 @@ package iterator
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"reflect"
 	"testing"
 )
+
+const maxReadIterationsCount = 3
+
+type badReader struct {
+	r io.Reader
+	i int
+}
+
+func (r *badReader) Read(b []byte) (int, error) {
+	if r.i >= maxReadIterationsCount {
+		return 0, fmt.Errorf("test error")
+	}
+	r.i++
+
+	return r.r.Read(b)
+}
 
 func TestReaderIterator(t *testing.T) {
 	type fields struct {
@@ -22,6 +39,7 @@ func TestReaderIterator(t *testing.T) {
 		{"empty reader", fields{bytes.NewReader(nil), 1}, []byte{}, false},
 		{"one iter", fields{bytes.NewReader([]byte{1, 2, 3, 4, 5}), 10}, []byte{1, 2, 3, 4, 5}, false},
 		{"multi iter", fields{bytes.NewReader([]byte{1, 2, 3, 4, 5}), 1}, []byte{1, 2, 3, 4, 5}, false},
+		{"bad reader", fields{r: &badReader{r: bytes.NewReader([]byte{1, 2, 3, 4})}, bufSize: 1}, nil, true},
 	}
 
 	buf := bytes.NewBuffer([]byte{})
