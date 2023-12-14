@@ -33,6 +33,7 @@ func New(fs RepositoryFS) *Service {
 // Note that the method doesn't close the file.
 //
 // The iterator contains the reader that implements io.ReadCloser.
+// The user should close it manually.
 func (s *Service) ReadFileIterator(ctx context.Context, path models.FilePath) (_ *iterator.ReaderIterator, err error) {
 	f, err := s.fs.Open(path)
 	if err != nil {

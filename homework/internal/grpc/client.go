@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/charmbracelet/log"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -23,17 +23,17 @@ func (c *Client) CloseConn() error {
 
 type ClientOp func(*Client)
 
-// NewClient creates a new FileServiceClient from ClientConfig.
+// NewClient creates a new FileServiceClient from Client.
 // DialContextTimeout is not used inside. The user should use it in context
 // inside the function to cancel the context by themselves.
-func NewClient(ctx context.Context, logger *log.Logger, config *config.ClientConfig) (*Client, error) {
+func NewClient(ctx context.Context, logger *zap.SugaredLogger, config *config.Client) (*Client, error) {
 	loggerInterceptor := grpc.WithUnaryInterceptor(
 		NewLoggerClientInterceptor(logger),
 	)
 
 	conn, err := grpc.DialContext(ctx, config.Addr,
 		append(
-			config.DialConfig.InitDialOptions(),
+			config.DialClient.InitDialOptions(),
 			loggerInterceptor,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)...)

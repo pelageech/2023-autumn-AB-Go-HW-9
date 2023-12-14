@@ -6,10 +6,10 @@ import (
 	_ "embed"
 	"errors"
 	"io"
-	"os"
 	"time"
 
 	"github.com/charmbracelet/log"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
 	"homework/internal/config"
@@ -22,18 +22,16 @@ var byteConfig []byte
 
 func main() {
 	// load config
-	cfg := new(config.ClientConfig)
+	cfg := new(config.Client)
 	if err := yaml.Unmarshal(byteConfig, cfg); err != nil {
 		log.Fatal(err)
 	}
 
 	// configure logger
-	logOpts := log.Options{ReportTimestamp: true}
-	if cfg.Logger.TimeFormat != nil {
-		logOpts.TimeFormat = *cfg.Logger.TimeFormat
+	logger, err := cfg.Logger.Init()
+	if err != nil {
+		zap.S().Fatal(err)
 	}
-
-	logger := log.NewWithOptions(os.Stdout, logOpts)
 
 	// connection to the server
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
