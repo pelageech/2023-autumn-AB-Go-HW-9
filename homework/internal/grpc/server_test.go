@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -37,6 +36,7 @@ type grpcSuite struct {
 }
 
 func (s *grpcSuite) SetupSuite() {
+	// config server
 	s.fileService = &mocks.FileService{}
 
 	s.listener = bufconn.Listen(1 << 20)
@@ -45,6 +45,7 @@ func (s *grpcSuite) SetupSuite() {
 	s.grpcserver = NewGRPCServerPrepare(s.fileService)
 	s.T().Log("server configured")
 
+	// config client
 	cfg := &config.Client{Addr: "bufnet"}
 	bufDialer := func(context.Context, string) (net.Conn, error) {
 		return s.listener.Dial()
@@ -61,6 +62,7 @@ func (s *grpcSuite) SetupSuite() {
 	s.client = client
 	s.T().Log("client configured")
 
+	// setup server
 	go func() {
 		err = s.grpcserver.Serve(s.listener)
 		if err != nil {
@@ -123,14 +125,14 @@ func (s *grpcSuite) TestGRPCServer_ReadFileIterator() {
 		{"large file", args{name: "large.txt"}, b, false},
 	}
 
-	s.fileService.On("ReadFileIterator", mock.Anything, tests[0].args.name).
+	s.fileService.EXPECT().ReadFileIterator(context.Background(), tests[0].args.name).
 		Return(nil, fs.ErrInvalid).Once()
 
-	s.fileService.On("ReadFileIterator", mock.Anything, tests[1].args.name).
+	s.fileService.EXPECT().ReadFileIterator(context.Background(), tests[1].args.name).
 		Return(iterator.NewReaderIterator(context.Background(), io.NopCloser(&badReader{r: bytes.NewReader(b[:6])}), make([]byte, 1)), nil).Once()
 
 	for _, t := range tests[2:] {
-		s.fileService.On("ReadFileIterator", mock.Anything, t.args.name).
+		s.fileService.EXPECT().ReadFileIterator(context.Background(), t.args.name).
 			Return(iterator.NewReaderIterator(context.Background(), io.NopCloser(bytes.NewReader(t.want)), make([]byte, 4<<10)), nil).Once()
 	}
 
@@ -189,10 +191,10 @@ func (s *grpcSuite) TestGRPCServer_Ls() {
 		{"many files", args{name: "many"}, []models.FileName{"aboba1", "aboba2", "aboba3"}, false},
 	}
 
-	s.fileService.On("Ls", mock.Anything, tests[0].args.name).
+	s.fileService.EXPECT().Ls(context.Background(), tests[0].args.name).
 		Return(nil, fs.ErrInvalid).Once()
 	for _, t := range tests[1:] {
-		s.fileService.On("Ls", mock.Anything, t.args.name).
+		s.fileService.EXPECT().Ls(context.Background(), t.args.name).
 			Return(t.want, nil).Once()
 	}
 
@@ -233,10 +235,10 @@ func (s *grpcSuite) TestGRPCServer_Meta() {
 		{"one file", args{name: "one"}, &models.FileInfo{Size: 1987, Mode: 0o145, IsDir: false}, false},
 	}
 
-	s.fileService.On("Meta", mock.Anything, tests[0].args.name).
+	s.fileService.EXPECT().Meta(context.Background(), tests[0].args.name).
 		Return(nil, fs.ErrInvalid).Once()
 	for _, t := range tests[1:] {
-		s.fileService.On("Meta", mock.Anything, t.args.name).
+		s.fileService.EXPECT().Meta(context.Background(), t.args.name).
 			Return(t.want, nil).Once()
 	}
 

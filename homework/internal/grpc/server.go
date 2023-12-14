@@ -19,7 +19,7 @@ const PacketSize = 4 << 10 // 4 KiB
 // items.
 // All the methods support context.
 //
-//go:generate go run github.com/vektra/mockery/v2@v2.38.0 --name=FileService
+//go:generate go run github.com/vektra/mockery/v2@v2.38.0 --with-expecter --name=FileService
 type FileService interface {
 	// Ls returns a list of files containing in the given path.
 	Ls(ctx context.Context, path models.FilePath) ([]models.FileName, error)
