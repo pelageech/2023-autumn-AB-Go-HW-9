@@ -17,6 +17,14 @@ type FileService struct {
 	mock.Mock
 }
 
+type FileService_Expecter struct {
+	mock *mock.Mock
+}
+
+func (_m *FileService) EXPECT() *FileService_Expecter {
+	return &FileService_Expecter{mock: &_m.Mock}
+}
+
 // Ls provides a mock function with given fields: ctx, path
 func (_m *FileService) Ls(ctx context.Context, path string) ([]string, error) {
 	ret := _m.Called(ctx, path)
@@ -45,6 +53,35 @@ func (_m *FileService) Ls(ctx context.Context, path string) ([]string, error) {
 	}
 
 	return r0, r1
+}
+
+// FileService_Ls_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Ls'
+type FileService_Ls_Call struct {
+	*mock.Call
+}
+
+// Ls is a helper method to define mock.On call
+//   - ctx context.Context
+//   - path string
+func (_e *FileService_Expecter) Ls(ctx interface{}, path interface{}) *FileService_Ls_Call {
+	return &FileService_Ls_Call{Call: _e.mock.On("Ls", ctx, path)}
+}
+
+func (_c *FileService_Ls_Call) Run(run func(ctx context.Context, path string)) *FileService_Ls_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *FileService_Ls_Call) Return(_a0 []string, _a1 error) *FileService_Ls_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *FileService_Ls_Call) RunAndReturn(run func(context.Context, string) ([]string, error)) *FileService_Ls_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Meta provides a mock function with given fields: ctx, path
@@ -77,6 +114,35 @@ func (_m *FileService) Meta(ctx context.Context, path string) (*models.FileInfo,
 	return r0, r1
 }
 
+// FileService_Meta_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Meta'
+type FileService_Meta_Call struct {
+	*mock.Call
+}
+
+// Meta is a helper method to define mock.On call
+//   - ctx context.Context
+//   - path string
+func (_e *FileService_Expecter) Meta(ctx interface{}, path interface{}) *FileService_Meta_Call {
+	return &FileService_Meta_Call{Call: _e.mock.On("Meta", ctx, path)}
+}
+
+func (_c *FileService_Meta_Call) Run(run func(ctx context.Context, path string)) *FileService_Meta_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *FileService_Meta_Call) Return(_a0 *models.FileInfo, _a1 error) *FileService_Meta_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *FileService_Meta_Call) RunAndReturn(run func(context.Context, string) (*models.FileInfo, error)) *FileService_Meta_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ReadFileIterator provides a mock function with given fields: ctx, path
 func (_m *FileService) ReadFileIterator(ctx context.Context, path string) (*iterator.ReaderIterator, error) {
 	ret := _m.Called(ctx, path)
@@ -105,6 +171,35 @@ func (_m *FileService) ReadFileIterator(ctx context.Context, path string) (*iter
 	}
 
 	return r0, r1
+}
+
+// FileService_ReadFileIterator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReadFileIterator'
+type FileService_ReadFileIterator_Call struct {
+	*mock.Call
+}
+
+// ReadFileIterator is a helper method to define mock.On call
+//   - ctx context.Context
+//   - path string
+func (_e *FileService_Expecter) ReadFileIterator(ctx interface{}, path interface{}) *FileService_ReadFileIterator_Call {
+	return &FileService_ReadFileIterator_Call{Call: _e.mock.On("ReadFileIterator", ctx, path)}
+}
+
+func (_c *FileService_ReadFileIterator_Call) Run(run func(ctx context.Context, path string)) *FileService_ReadFileIterator_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *FileService_ReadFileIterator_Call) Return(_a0 *iterator.ReaderIterator, _a1 error) *FileService_ReadFileIterator_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *FileService_ReadFileIterator_Call) RunAndReturn(run func(context.Context, string) (*iterator.ReaderIterator, error)) *FileService_ReadFileIterator_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // NewFileService creates a new instance of FileService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
