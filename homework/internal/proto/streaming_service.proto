@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package file;
+
+import "validate/validate.proto";
+
+option go_package = "./proto";
+
+service FileService {
+  rpc ReadFile(ReadFileRequest) returns (stream ReadFileReply);
+  rpc Ls(LsRequest) returns (LsReply);
+  rpc Meta(MetaRequest) returns (MetaReply);
+}
+
+message ReadFileRequest {
+  string Name = 1 [(validate.rules).string.pattern = "^(/)?([^/\0]+(/)?)+$"];
+}
+
+message ReadFileReply {
+  bytes Stream = 1;
+}
+
+message LsRequest {
+  string Dir = 1 [(validate.rules).string.pattern = "^(/)?([^/\0]+(/)?)+$"];
+}
+
+message LsReply {
+  repeated string Files = 1;
+}
+
+message MetaRequest {
+  string Name = 1 [(validate.rules).string.pattern = "^(/)?([^/\0]+(/)?)+$"];
+}
+
+message MetaReply {
+  int64 Size = 1; // in bytes
+  uint32 Mode = 2; // rwxrwxrwx bit array, 31-9 bits not used
+  bool IsDir = 3;
+  reserved 4 to 8;
+}

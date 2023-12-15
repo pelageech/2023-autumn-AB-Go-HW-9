@@ -1,0 +1,6 @@
+addr: ':50051'
+service:
+  dir: '.'
+logger:
+  output:
+  - stdout
