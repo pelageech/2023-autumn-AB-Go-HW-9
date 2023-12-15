@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func NewLoggerServerInterceptor(l *zap.SugaredLogger) grpc.UnaryServerInterceptor {
+func NewLoggerServerUnaryInterceptor(l *zap.SugaredLogger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		l.Infow("request", "method", info.FullMethod)
 		resp, err = handler(ctx, req)
@@ -21,7 +21,19 @@ func NewLoggerServerInterceptor(l *zap.SugaredLogger) grpc.UnaryServerIntercepto
 	}
 }
 
-func NewLoggerClientInterceptor(l *zap.SugaredLogger) grpc.UnaryClientInterceptor {
+func NewLoggerServerStreamInterceptor(l *zap.SugaredLogger) grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		l.Infow("request", "method", info.FullMethod)
+		err := handler(srv, ss)
+		if err != nil {
+			l.Infow("request not processed", "error", err)
+		}
+
+		return err
+	}
+}
+
+func NewLoggerClientUnaryInterceptor(l *zap.SugaredLogger) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		l.Infow("request", "method", method)
 		err := invoker(ctx, method, req, reply, cc, opts...)
@@ -30,6 +42,18 @@ func NewLoggerClientInterceptor(l *zap.SugaredLogger) grpc.UnaryClientIntercepto
 		}
 
 		return err
+	}
+}
+
+func NewLoggerClientStreamInterceptor(l *zap.SugaredLogger) grpc.StreamClientInterceptor {
+	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		l.Infow("request", "method", method)
+		stream, err := streamer(ctx, desc, cc, method, opts...)
+		if err != nil {
+			l.Infow("request not processed", "error", err)
+		}
+
+		return stream, err
 	}
 }
 
