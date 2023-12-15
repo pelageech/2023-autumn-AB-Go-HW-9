@@ -36,9 +36,10 @@ func main() {
 	gs := grpcinternal.NewGRPCServerPrepare(
 		fileservice.New(dirfs.New(cfg.Service.Dir)),
 		grpc.ChainUnaryInterceptor(
-			grpcinternal.NewLoggerServerInterceptor(logger),
+			grpcinternal.NewLoggerServerUnaryInterceptor(logger),
 			grpcinternal.ValidateInterceptor,
 		),
+		grpc.StreamInterceptor(grpcinternal.NewLoggerServerStreamInterceptor(logger)),
 	)
 
 	log.Printf("Server started on %s", cfg.Addr)

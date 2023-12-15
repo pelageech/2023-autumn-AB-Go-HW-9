@@ -24,13 +24,17 @@ func (c *Client) CloseConn() error {
 // DialContextTimeout is not used inside. The user should use it in context
 // inside the function to cancel the context by themselves.
 func NewClient(ctx context.Context, logger *zap.SugaredLogger, config *config.Client, otherOps ...grpc.DialOption) (*Client, error) {
-	loggerInterceptor := grpc.WithUnaryInterceptor(
-		NewLoggerClientInterceptor(logger),
+	loggerUnaryInterceptor := grpc.WithUnaryInterceptor(
+		NewLoggerClientUnaryInterceptor(logger),
+	)
+	loggerStreamInterceptor := grpc.WithStreamInterceptor(
+		NewLoggerClientStreamInterceptor(logger),
 	)
 
 	ops := append(
 		config.DialClient.InitDialOptions(),
-		loggerInterceptor, // most outer interceptor
+		loggerUnaryInterceptor, // most outer interceptor
+		loggerStreamInterceptor,
 	)
 	conn, err := grpc.DialContext(ctx, config.Addr, append(ops, otherOps...)...)
 	if err != nil {
