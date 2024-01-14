@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"os"
 	"time"
 
 	"go.uber.org/zap"
@@ -19,10 +20,22 @@ import (
 	"homework/internal/proto"
 )
 
-//go:embed config.yaml
-var byteConfig []byte
+const configFileName = "config.yaml"
 
 func main() {
+	f, err := os.Open(configFileName)
+	if err != nil {
+		log.Fatalln("file open error:", err)
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	byteConfig, err := io.ReadAll(f)
+	if err != nil {
+		log.Fatalln("file read error:", err)
+	}
+
 	// load config
 	cfg := new(config.Client)
 	if err := yaml.Unmarshal(byteConfig, cfg); err != nil {

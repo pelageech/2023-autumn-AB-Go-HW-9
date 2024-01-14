@@ -2,8 +2,10 @@ package main
 
 import (
 	_ "embed"
+	"io"
 	"log"
 	"net"
+	"os"
 
 	"google.golang.org/grpc"
 	"gopkg.in/yaml.v3"
@@ -14,10 +16,22 @@ import (
 	"homework/internal/repo/dirfs"
 )
 
-//go:embed config.yaml
-var byteConfig []byte
+const configFileName = "config.yaml"
 
 func main() {
+	f, err := os.Open(configFileName)
+	if err != nil {
+		log.Fatalln("file open error:", err)
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	byteConfig, err := io.ReadAll(f)
+	if err != nil {
+		log.Fatalln("file read error:", err)
+	}
+
 	cfg := new(config.Server)
 	if err := yaml.Unmarshal(byteConfig, cfg); err != nil {
 		log.Fatal(err)
