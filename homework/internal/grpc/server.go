@@ -28,6 +28,7 @@ type FileService interface {
 	Meta(ctx context.Context, path models.FilePath) (*models.FileInfo, error)
 
 	// ReadFileIterator opens a file on FS and returns an iterator *iterator.ReaderIterator.
+	// Reader inside the iterator must implement io.Closer
 	ReadFileIterator(ctx context.Context, path models.FilePath) (*iterator.ReaderIterator, error)
 }
 
