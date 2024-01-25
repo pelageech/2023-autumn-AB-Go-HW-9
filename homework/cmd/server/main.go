@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"flag"
 	"io"
 	"log"
 	"net"
@@ -16,10 +17,12 @@ import (
 	"homework/internal/repo/dirfs"
 )
 
-const configFileName = "config.yaml"
+var configPath = flag.String("config-path", "config.yaml", "Client file configuration")
 
 func main() {
-	f, err := os.Open(configFileName)
+	flag.Parse()
+
+	f, err := os.Open(*configPath)
 	if err != nil {
 		log.Fatalln("file open error:", err)
 	}
